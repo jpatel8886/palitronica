@@ -1,0 +1,41 @@
+version: '3'
+services:
+  frontend:
+    container_name: frontend
+    ports:
+      - 4000:80
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    networks:
+      - node-app-network
+    depends_on:
+      - node
+  node:
+    restart: always
+    container_name: server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+    networks:
+      - node-app-network
+  mongo:
+    container_name: mongo
+    image: mongo
+    networks:
+      - node-app-network
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - "27018:27017"
+
+volumes:
+  mongodb:
+
+networks:
+  node-app-network:
+    driver: bridge

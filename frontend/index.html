@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Palitronica</title>
+	</head>
+	<body>
+		<h1>Palitronica web app</h1>
+		<form>
+			<label>Customer ID: </label>
+			<input autofocus id="customerID" required />
+
+			<h3>Enter item quantities:</h3>
+
+			<label>Toyota</label>
+			<input
+				name="toyota"
+				type="number"
+				class="item-quantity"
+				onchange="handlePrice(event)"
+			/>
+			<p id="toyota-price">$0</p>
+
+			<label>Mercedes</label>
+			<input
+				name="mercedes"
+				type="number"
+				class="item-quantity"
+				onchange="handlePrice(event)"
+			/>
+			<p id="mercedes-price">$0</p>
+
+			<label>Tesla</label>
+			<input
+				name="tesla"
+				type="number"
+				class="item-quantity"
+				onchange="handlePrice(event)"
+			/>
+			<p id="tesla-price">$0</p>
+
+			<button onClick="handleForm(event)">Submit</button>
+		</form>
+
+		<p id="result"></p>
+	</body>
+
+	<script>
+		const UNIT_PRICES = {
+			toyota: 1000,
+			mercedes: 2000,
+			tesla: 3000,
+		};
+
+		const handlePrice = (event) => {
+			const itemName = event.target.getAttribute("name");
+			const priceText = document.querySelector("#" + itemName + "-price");
+
+			if (itemName == "toyota")
+				priceText.textContent =
+					"$" + event.target.value * UNIT_PRICES.toyota;
+			if (itemName == "mercedes")
+				priceText.textContent =
+					"$" + event.target.value * UNIT_PRICES.mercedes;
+			if (itemName == "tesla")
+				priceText.textContent =
+					"$" + event.target.value * UNIT_PRICES.tesla;
+		};
+
+		const handleForm = (event) => {
+			event.preventDefault();
+			missing = false;
+
+			const customerID = document.getElementById("customerID").value;
+			if (customerID.length <= 0) missing = true;
+
+			items = [];
+			const quantities = document.querySelectorAll(".item-quantity");
+
+			quantities.forEach((q) => {
+				if (q.value != 0) {
+					if (!parseInt(q.value)) missing = true;
+				}
+
+				// create json object and append to items array
+				newItem = {};
+				newItem["name"] = String(q.name);
+				newItem["quantity"] = String(q.value);
+				newItem["unit_price"] = UNIT_PRICES[String(q.name)];
+				items.push(newItem);
+			});
+
+			// if values are missing, alert the user
+			if (missing)
+				alert(
+					"please enter the following:\n    a valid customer ID\n    positive value for each item quantity"
+				);
+
+			const payload = {};
+			payload["id"] = customerID;
+			payload["items"] = items;
+
+			let http = new XMLHttpRequest();
+			http.open("POST", "http://localhost:8080/tax", true);
+			http.setRequestHeader(
+				"Content-Type",
+				"application/json;charset=UTF-8"
+			);
+			let result = http.send(JSON.stringify(payload));
+
+			http.onload = (event) => {
+				result = JSON.parse(event.target.response);
+
+				displayString = `customer name: <strong>${result.name}</strong>`;
+
+				displayString += `<ul>`;
+				result.items.forEach((item) => {
+					displayString += `
+                            <li>
+                                <strong>${item.name}</strong> total price is $${item.price} (tax $${item.tax})
+                            </li>
+                        `;
+				});
+				displayString += `</ul>`;
+
+				displayString += `Total price payable: <strong>${result.total_price}</strong>`;
+
+				document.querySelector("#result").innerHTML = displayString;
+			};
+		};
+	</script>
+</html>
