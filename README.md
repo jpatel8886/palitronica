@@ -2,4 +2,4 @@
 
 To run the app simply use:
 
-**docker-compose up**
+**$ docker-compose up**
